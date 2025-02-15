@@ -1,0 +1,38 @@
+using user_service.application.dto;
+using user_service.domain.models;
+using user_service.domain.models.valueobjects;
+using user_service.infrastructure.http_clients.interfaces;
+using user_service.infrastructure.repository.interfaces;
+using user_service.services.hashing;
+using user_service.services.jwt_authentification;
+using user_service.services.result;
+using user_service.services.result.errors;
+
+namespace user_service.domain.logics;
+
+public class UserLogic(
+    IDbRepository<User> rep,
+    IDbRepository<Role> repRole)
+{
+    private readonly IDbRepository<User> _rep = rep;
+    private readonly IDbRepository<Role> _repRole = repRole;
+
+    
+
+    public async Task<Result> UserNameExists(string userName)
+    {
+        var resUserExists = await _rep.Exists(u => u.UserName.Value == userName);
+        if (resUserExists.IsFailure || resUserExists.Value)
+            return Result.Failure(resUserExists.Error);
+        
+        return Result.Success();
+    }
+    public async Task<Result> EmailExists(string email)
+    {
+        var resUserExists = await _rep.Exists(u => u.Email.Value == email);
+        if (resUserExists.IsFailure || resUserExists.Value)
+            return Result.Failure(resUserExists.Error);
+        
+        return Result.Success();
+    }
+}
