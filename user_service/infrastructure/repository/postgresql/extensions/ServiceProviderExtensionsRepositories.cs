@@ -11,8 +11,15 @@ public static class ServiceProviderExtensionsRepositories
 {
     public static void AddPostgreSqlDbContext(this IServiceCollection services)
     {
-        //TODO: Вносить строку подключения к БД
-        services.AddScoped<DbContext, PostgreSqlDbContext>();
+        var server = Environment.GetEnvironmentVariable("DB_SERVER");
+        var port = Environment.GetEnvironmentVariable("DB_PORT");
+        var database = Environment.GetEnvironmentVariable("DB_NAME");
+        var user = Environment.GetEnvironmentVariable("DB_USER");
+        var password = Environment.GetEnvironmentVariable("DB_PASSWORD");
+
+        var connectionString = $"Server={server};Port={port};Database={database};User Id={user};Password={password}";
+
+        services.AddScoped<DbContext, PostgreSqlDbContext>(s => new PostgreSqlDbContext(connectionString));
     }
     
     public static void AddRepositories(this IServiceCollection services)

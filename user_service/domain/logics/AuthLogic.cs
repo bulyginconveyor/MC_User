@@ -10,21 +10,14 @@ using user_service.services.result.errors;
 
 namespace user_service.domain.logics;
 
-public class AuthLogi(
+public class AuthLogic(
     IDbRepository<User> rep,
     IDbRepository<Role> repRole,
     ICacheRepository<RegisterData> cacheRegisterData,
     IConfirmCodeStorage confirmCodeStorage,
-    INotificationServiceREST notificationServiceREST,
+    INotificationService notificationService,
     JwtTokenHandler jwtTokenHandler)
 {
-    private readonly IDbRepository<User> _rep = rep;
-    private readonly IDbRepository<Role> _repRole = repRole;
-    private readonly ICacheRepository<RegisterData> _cacheRegisterData = cacheRegisterData;
-    private readonly IConfirmCodeStorage _confirmCodeStorage = confirmCodeStorage;
-    private readonly INotificationServiceREST _notificationServiceREST = notificationServiceREST;
-    private readonly JwtTokenHandler _jwtTokenHandler = jwtTokenHandler;
-
     public async Task<Result> GetRegisterData(RegisterData registerData)
     {
         if (string.IsNullOrWhiteSpace(registerData.UserName))
@@ -35,33 +28,33 @@ public class AuthLogi(
             return Result.Failure(Errors.UserLogic.PasswordEmpty);
 
         var passwordIsValid = Password.PasswordIsValid(registerData.Password);
-        if (passwordIsValid.IsFailure && passwordIsValid.Error! == Errors.Password.NotUseRules)
+        if (passwordIsValid.IsFailure)
             return Result.Failure(Errors.UserLogic.PasswordNotValid);
 
         var resExistsUserName = await UserNameExists(registerData.UserName);
         if (resExistsUserName.IsFailure)
-            return Result.Failure(resExistsUserName.Error);
+            return Result.Failure(resExistsUserName.Error!);
 
         var resExistsEmail = await EmailExists(registerData.Email);
         if (resExistsEmail.IsFailure)
-            return Result.Failure(resExistsEmail.Error);
+            return Result.Failure(resExistsEmail.Error!);
 
-        var resAdd = await _cacheRegisterData.Add(registerData.Email, registerData);
+        var resAdd = await cacheRegisterData.Add(registerData.Email, registerData);
         if (resAdd.IsFailure)
-            return Result.Failure(resAdd.Error);
+            return Result.Failure(resAdd.Error!);
 
         var code = await confirmCodeStorage.GenerateAndSaveCode(registerData.Email);
-        await _notificationServiceREST.SendConfirmLink(registerData.Email, code);
+        await notificationService.SendConfirmLink(registerData.Email, code);
 
         return Result.Success();
     }
-    public async Task<Result> ConfrimEmailAndRegister(string email, string code)
+    public async Task<Result> ConfrimEmailAndRegister(ConfirmEmailData confrimEmailData)
     {
-        var resConfirm = await ConfirmEmail(email, code);
+        var resConfirm = await ConfirmEmail(confrimEmailData);
         if (resConfirm.IsFailure)
             return resConfirm;
 
-        var resGet = await _cacheRegisterData.Get(email);
+        var resGet = await cacheRegisterData.Get(confrimEmailData.Email);
         if (resGet.IsFailure)
             return Result.Failure(resGet.Error!);
 
@@ -70,32 +63,35 @@ public class AuthLogi(
         Name name = data.UserName == null ? Name.RandomName(data.Email) : Name.Create(data.UserName);
         Email emailAddress = Email.Create(data.Email);
         Password password = Password.Create(data.Password);
-        var role = await _repRole.GetOne(r => r.Name.Value == "user");
+        var role = await repRole.GetOne(r => r.Name.Value == "user");
         if (role.IsFailure)
             return Result.Failure(role.Error!);
 
         User user = new User(name, password, emailAddress, role.Value!);
 
-        var resAdd = await _rep.Add(user);
+        var resAdd = await rep.Add(user);
         if (resAdd.IsFailure)
             return Result.Failure(resAdd.Error!);
 
-        var resSave = await _rep.Save();
+        var resSave = await rep.Save();
         if (resSave.IsFailure)
             return Result.Failure(resSave.Error!);
 
         return Result.Success();
     }
-    public async Task<Result<Token>> Authenticate(string email, string password)
+    public async Task<Result<Token>> Authenticate(AuthData data)
     {
-        var resUser = await _rep.GetOne(u => u.Email.Value == email);
+        if (string.IsNullOrWhiteSpace(data.Login) || string.IsNullOrWhiteSpace(data.Password))
+            return Result<Token>.Failure(Errors.UserLogic.NoAuthorize);
+        
+        var resUser = await rep.GetOne(u => u.Email.Value == data.Login || u.UserName.Value == data.Login);
         if (resUser.IsFailure)
             return Result<Token>.Failure(Errors.UserLogic.NoAuthorize);
 
-        if(!PasswordHasher.HashIsPassword(resUser.Value.Password.Value, password))
+        if(!PasswordHasher.HashIsPassword(resUser.Value!.Password.Value, data.Password))
             return Result<Token>.Failure(Errors.UserLogic.NoAuthorize);
 
-        var token = _jwtTokenHandler.GenerateJwtToken(resUser.Value.Role.Name.Value, resUser.Value.Id);
+        var token = jwtTokenHandler.GenerateJwtToken(resUser.Value.Role.Name.Value, resUser.Value.Id);
         
         return Result<Token>.Success(new Token
         {
@@ -104,9 +100,12 @@ public class AuthLogi(
         });
     }
 
-    public async Task<Result> ConfirmEmail(string email, string code)
+    public async Task<Result> ConfirmEmail(ConfirmEmailData data)
     {
-        var resConfirm = await _confirmCodeStorage.ConfirmEmail(email, code);
+        if (string.IsNullOrWhiteSpace(data.Email) || string.IsNullOrWhiteSpace(data.Code))
+            return Result.Failure(Errors.UserLogic.EmailNotConfirmed);
+        
+        var resConfirm = await confirmCodeStorage.ConfirmEmail(data.Email, data.Code);
         if (!resConfirm)
             return Result.Failure(Errors.UserLogic.EmailNotConfirmed);
 
@@ -114,17 +113,17 @@ public class AuthLogi(
     }
     public async Task<Result> UserNameExists(string userName)
     {
-        var resUserExists = await _rep.Exists(u => u.UserName.Value == userName);
+        var resUserExists = await rep.Exists(u => u.UserName.Value == userName);
         if (resUserExists.IsFailure || resUserExists.Value)
-            return Result.Failure(resUserExists.Error);
+            return Result.Failure(resUserExists.Error!);
 
         return Result.Success();
     }
     public async Task<Result> EmailExists(string email)
     {
-        var resUserExists = await _rep.Exists(u => u.Email.Value == email);
+        var resUserExists = await rep.Exists(u => u.Email.Value == email);
         if (resUserExists.IsFailure || resUserExists.Value)
-            return Result.Failure(resUserExists.Error);
+            return Result.Failure(resUserExists.Error!);
 
         return Result.Success();
     }

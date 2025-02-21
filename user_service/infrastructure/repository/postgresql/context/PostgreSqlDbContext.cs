@@ -12,9 +12,9 @@ public class PostgreSqlDbContext : DbContext
     
     private readonly string _connectionString;
     
-    public PostgreSqlDbContext()
+    public PostgreSqlDbContext(string connectionString)
     {
-        _connectionString = "Server=localhost;Port=5432;Database=UserService;User Id=postgres;Password=postgres;";
+        _connectionString = connectionString;
         //Database.EnsureDeleted();
         Database.EnsureCreated();
 
@@ -31,7 +31,6 @@ public class PostgreSqlDbContext : DbContext
     
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {
-        //TODO: Придумать - где и когда брать строку подключения из .env файла
         optionsBuilder.UseNpgsql(_connectionString); 
     }
     

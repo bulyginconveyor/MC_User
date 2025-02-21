@@ -17,7 +17,21 @@ public class UserLogic(
     private readonly IDbRepository<User> _rep = rep;
     private readonly IDbRepository<Role> _repRole = repRole;
 
-    
+    public async Task<Result<Profile>> GetMyProfile(Guid userId)
+    {
+        var resUser = await _rep.GetOne(userId);
+        if (resUser.IsFailure)
+            return Result<Profile>.Failure(resUser.Error);
+
+        var profile = new Profile
+        {
+            UserName = resUser.Value.UserName.Value,
+            Email = resUser.Value.Email.Value,
+            EmailConfirmed = resUser.Value.ConfirmEmail != null
+        };
+        
+        return Result<Profile>.Success(profile);
+    }
 
     public async Task<Result> UserNameExists(string userName)
     {
