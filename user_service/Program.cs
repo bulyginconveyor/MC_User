@@ -1,5 +1,8 @@
 using DotNetEnv;
+using user_service.domain.logics;
 using user_service.infrastructure.http_clients.notification_service;
+using user_service.infrastructure.repository.postgresql.extensions;
+using user_service.infrastructure.repository.redis;
 using user_service.services.jwt_authentification;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -13,7 +16,15 @@ else
     Env.Load(".env");
 }
 // Add services to the container.
+builder.Services.AddPostgreSqlDbContext();
+builder.Services.AddRepositories();
+
+builder.Services.AddRedisCache();
+builder.Services.AddConfirmCodeStorage();
+
 builder.Services.AddNotificationServiceKafka();
+
+builder.Services.AddTransient<AuthLogic>();
 
 builder.Services.AddJwtAuthentification();
 
