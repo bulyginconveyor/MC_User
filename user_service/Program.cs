@@ -1,4 +1,5 @@
 using DotNetEnv;
+using user_service.infrastructure.http_clients.notification_service;
 using user_service.services.jwt_authentification;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -12,6 +13,7 @@ else
     Env.Load(".env");
 }
 // Add services to the container.
+builder.Services.AddNotificationServiceKafka();
 
 builder.Services.AddJwtAuthentification();
 

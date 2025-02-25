@@ -22,7 +22,7 @@ namespace user_service.application.rest
         }
 
         [HttpPost("register")]
-        public async Task<ActionResult<Token>> GetRegisterData(RegisterData registerData)
+        public async Task<ActionResult> GetRegisterData(RegisterData registerData)
         {
             var res = await _authLogic.GetRegisterData(registerData);
             if (res.IsFailure)
