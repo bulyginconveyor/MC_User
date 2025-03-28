@@ -15,7 +15,7 @@ public class PostgreSqlDbContext : DbContext
     public PostgreSqlDbContext(string connectionString)
     {
         _connectionString = connectionString;
-        //Database.EnsureDeleted();
+        Database.EnsureDeleted();
         Database.EnsureCreated();
 
         if (!Roles.Any())
