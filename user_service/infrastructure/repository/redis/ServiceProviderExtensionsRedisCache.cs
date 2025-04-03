@@ -13,11 +13,11 @@ public static class ServiceProviderExtensionsRedisCache
         
         string connectionRedis = Environment.GetEnvironmentVariable("REDIS_CONNECTION");
         services.AddSingleton<IConnectionMultiplexer>(ConnectionMultiplexer.Connect(connectionRedis));
-        services.AddScoped<ICacheRepository<RegisterData>, BaseCacheRepository<RegisterData>>();
     }
 
-    public static void AddConfirmCodeStorage(this IServiceCollection services)
-    {
-        services.AddScoped<IConfirmCodeStorage, ConfirmCodeRedisStorage>();
-    }
+    public static void AddConfirmCodeStorage(this IServiceCollection services) 
+        => services.AddScoped<IConfirmCodeStorage, ConfirmCodeRedisStorage>();
+
+    public static void AddCacheStorages(this IServiceCollection services) 
+        => services.AddScoped<ICacheRepository<RegisterData>, BaseCacheRepository<RegisterData>>();
 }

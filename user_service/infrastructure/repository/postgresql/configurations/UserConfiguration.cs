@@ -10,8 +10,8 @@ public class UserConfiguration : IEntityTypeConfiguration<User>
     {
         builder.ToTable("users");
         builder.HasKey(x => x.Id);
-        
-        builder.Property(x => x.Id).HasColumnName("id").IsRequired();
+
+        builder.Property(x => x.Id).HasColumnName("id").IsRequired().HasDefaultValue(Guid.NewGuid());
         builder.ComplexProperty(x => x.UserName, xu =>
             xu.Property(s => s.Value).HasColumnName("username").IsRequired()
         );

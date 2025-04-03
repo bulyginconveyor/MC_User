@@ -21,7 +21,7 @@ public class UserLogic(
     {
         var resUser = await _rep.GetOne(userId);
         if (resUser.IsFailure)
-            return Result<Profile>.Failure(resUser.Error);
+            return Result<Profile>.Failure(resUser.Error!);
 
         var profile = new Profile
         {
@@ -31,22 +31,5 @@ public class UserLogic(
         };
         
         return Result<Profile>.Success(profile);
-    }
-
-    public async Task<Result> UserNameExists(string userName)
-    {
-        var resUserExists = await _rep.Exists(u => u.UserName.Value == userName);
-        if (resUserExists.IsFailure || resUserExists.Value)
-            return Result.Failure(resUserExists.Error);
-        
-        return Result.Success();
-    }
-    public async Task<Result> EmailExists(string email)
-    {
-        var resUserExists = await _rep.Exists(u => u.Email.Value == email);
-        if (resUserExists.IsFailure || resUserExists.Value)
-            return Result.Failure(resUserExists.Error);
-        
-        return Result.Success();
     }
 }

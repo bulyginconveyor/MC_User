@@ -1,6 +1,5 @@
 using user_service.domain.models.@base;
 using user_service.domain.models.valueobjects;
-using user_service.services.guid_generator;
 
 namespace user_service.domain.models;
 
@@ -16,7 +15,7 @@ public class Role : Entity, IDbModel
 
     public Role(Name name)
     {
-        Id = GuidGenerator.GenerateByBytes();
+        Id = Guid.NewGuid();
         Name = name;
     }
 

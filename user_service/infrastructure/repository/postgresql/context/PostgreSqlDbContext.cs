@@ -15,8 +15,10 @@ public class PostgreSqlDbContext : DbContext
     public PostgreSqlDbContext(string connectionString)
     {
         _connectionString = connectionString;
-        Database.EnsureDeleted();
-        Database.EnsureCreated();
+        //Database.EnsureDeleted();
+        //Database.EnsureCreated();
+        
+        Database.Migrate();
 
         if (!Roles.Any())
         {
@@ -28,7 +30,7 @@ public class PostgreSqlDbContext : DbContext
             SaveChanges();
         }
     }
-    
+    public PostgreSqlDbContext(){}
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {
         optionsBuilder.UseNpgsql(_connectionString); 

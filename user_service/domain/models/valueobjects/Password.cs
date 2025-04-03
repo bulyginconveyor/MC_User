@@ -1,4 +1,5 @@
 using System.Text.RegularExpressions;
+using user_service.services.hashing;
 using user_service.services.result;
 using user_service.services.result.errors;
 
@@ -10,7 +11,7 @@ public record Password
     public string Value { get; init; }
 
     private Password(string value) => Value = IsNullOrEmpty(value) ? null : value;
-    
+    private Password(){}
     public static Password Create(string value)
     {
         var res = PasswordIsValid(value);
@@ -18,8 +19,10 @@ public record Password
         if (res.IsFailure)
             throw new ArgumentException(res.Error!.Description);
         
-        return new Password(value);
+        return new Password(PasswordHasher.GenerateHash(value));
     }
+
+    public static Password CreateByHashPassword(string hash) => new(hash);
 
     public static Result PasswordIsValid(string value)
     {

@@ -1,10 +1,10 @@
 using System.Linq.Expressions;
 using Microsoft.EntityFrameworkCore;
 using user_service.domain.models.@base;
-using user_service.infrastructure.repository.enums;
 using user_service.infrastructure.repository.interfaces;
 using user_service.services.result;
 using user_service.services.result.errors;
+using user_service.services.result.errors.@base;
 
 namespace user_service.infrastructure.repository.postgresql.repositories.@base;
 
@@ -22,7 +22,7 @@ public class BaseRepository<T>(DbContext context)
         }
         catch (Exception ex)
         {
-            return Result.Failure(Errors.Repository.TryException);
+            return Result.Failure(new Error("Repository.Save.TryException", ex.Message));
         }
     }
     
@@ -32,21 +32,12 @@ public class BaseRepository<T>(DbContext context)
         
         return Result<IEnumerable<T>>.Success(result);
     }
-    public virtual async Task<Result<IEnumerable<T>>> GetAll(Tracking tracking)
+    public virtual async Task<Result<IEnumerable<T>>> GetAll(Expression<Func<T, bool>> filter)
     {
-        if(tracking == Tracking.No)
-        {
-            var resNoTracking = await _context.Set<T>().AsNoTracking().Where(e => e.DeletedAt == null).ToListAsync();
-            return Result<IEnumerable<T>>.Success(resNoTracking);
-        }
-        
-        return await this.GetAll();
-    }
-    public virtual async Task<Result<IEnumerable<T>>> GetAll(Expression<Func<T, bool>> filter, Tracking tracking = Tracking.Yes)
-    {
-        var result = tracking == Tracking.No
-            ? await _context.Set<T>().AsNoTracking().Where(filter).Where(e => e.DeletedAt == null).ToListAsync()
-            : await _context.Set<T>().Where(filter).Where(e => e.DeletedAt == null).ToListAsync();
+        var result = await _context.Set<T>()
+            .AsNoTracking()
+            .Where(filter).Where(e => e.DeletedAt == null)
+            .ToListAsync();
         
         return Result<IEnumerable<T>>.Success(result);
     }
@@ -60,25 +51,11 @@ public class BaseRepository<T>(DbContext context)
         
         return Result<T>.Success(result);
     }
-    public virtual async Task<Result<T>> GetOne(Guid id, Tracking tracking = Tracking.Yes)
+    public virtual async Task<Result<T>> GetOne(Expression<Func<T, bool>> filter)
     {
-        if (tracking == Tracking.No)
-        {
-            var resNoTracking = await _context.Set<T>().AsNoTracking().Where(e => e.DeletedAt == null).FirstOrDefaultAsync(e => e.Id == id);
-            if(resNoTracking == null)
-                return Result<T>.Failure(Errors.Repository.NotFoundGetOneById);
-            
-            return Result<T>.Success(resNoTracking);
-        }
-
-        return await this.GetOne(id);
-    }
-    public virtual async Task<Result<T>> GetOne(Expression<Func<T, bool>> filter, Tracking tracking = Tracking.Yes)
-    {
-        var result = tracking == Tracking.No ?
-            await _context.Set<T>().AsNoTracking().Where(e => e.DeletedAt == null).FirstOrDefaultAsync(filter) 
-            :
-            await _context.Set<T>().Where(e => e.DeletedAt == null).FirstOrDefaultAsync(filter);
+        var result = await _context.Set<T>()
+            .Where(e => e.DeletedAt == null)
+            .FirstOrDefaultAsync(filter);
 
         if (result == null)
             return Result<T>.Failure(Errors.Repository.NotFoundGetOneById);
@@ -96,7 +73,7 @@ public class BaseRepository<T>(DbContext context)
         }
         catch (Exception ex)
         {
-            return Result.Failure(Errors.Repository.TryException);
+            return Result.Failure(new Error("Repository.TryException", ex.Message));
         }
     }
     public virtual async Task AddRange(IEnumerable<T> entities)
@@ -190,11 +167,21 @@ public class BaseRepository<T>(DbContext context)
 
     public virtual async Task<Result<bool>> Exists(Expression<Func<T, bool>> filter)
     {
-        var result = await this.Count(filter);
-        if (result.IsFailure || result.Value == 0 || result.Value > 1)
-            return Result<bool>.Failure(Errors.Repository.TryException);
-        
-        return Result<bool>.Success(true);
+        try
+        {
+            var result = await _context.Set<T>()
+                .AsNoTracking()
+                .Where(e => e.DeletedAt == null)
+                .AnyAsync(filter);
+            
+            return result 
+                ? Result<bool>.Success(true)
+                : Result<bool>.Success(false);
+        }
+        catch (Exception ex)
+        {
+            return Result<bool>.Failure(new Error("Repository.TryExcepthion", ex.Message));
+        }
     }
     public virtual async Task<Result<long>> Count(Expression<Func<T, bool>> filter)
     {

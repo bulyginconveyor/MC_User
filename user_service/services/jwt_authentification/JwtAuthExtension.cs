@@ -7,7 +7,7 @@ namespace user_service.services.jwt_authentification;
 
 public static class JwtAuthExtension
 {
-    public static void AddJwtAuthentification(this IServiceCollection services)
+    public static void AddJwtAuth(this IServiceCollection services)
     {
         var jwtKey = Environment.GetEnvironmentVariable("JWT_SECRET");
 
