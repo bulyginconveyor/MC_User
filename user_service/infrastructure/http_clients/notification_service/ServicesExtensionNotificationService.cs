@@ -11,6 +11,8 @@ public static class ServicesExtensionNotificationService
         var address_notification_service = Environment.GetEnvironmentVariable("ADDRESS_NOTIFICATION_SERVICE");
         
         var httpClient = new HttpClient();
+        if (IsNullOrWhiteSpace(address_notification_service))
+            throw new Exception($"Не задан адрес сервиса уведомлений (ADDRESS_NOTIFICATION_SERVICE in .env)");
         httpClient.BaseAddress = new Uri(address_notification_service);
 
         services.AddScoped<INotificationService, NotificationServiceREST>(

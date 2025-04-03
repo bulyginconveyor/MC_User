@@ -11,22 +11,19 @@ if (builder.Environment.IsDevelopment())
 {
     Env.Load("dev.env");
 }
-else
-{
-    Env.Load(".env");
-}
 // Add services to the container.
 builder.Services.AddPostgreSqlDbContext();
 builder.Services.AddRepositories();
 
 builder.Services.AddRedisCache();
+builder.Services.AddCacheStorages();
 builder.Services.AddConfirmCodeStorage();
 
 builder.Services.AddNotificationServiceKafka();
 
 builder.Services.AddTransient<AuthLogic>();
 
-builder.Services.AddJwtAuthentification();
+builder.Services.AddJwtAuth();
 
 builder.Services.AddControllers();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
@@ -42,7 +39,7 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
-app.UseHttpsRedirection();
+//app.UseHttpsRedirection();
 
 app.UseAuthorization();
 app.UseAuthentication();

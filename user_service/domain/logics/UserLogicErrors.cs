@@ -24,4 +24,10 @@ public class UserLogicErrors
 
     public Error NoAuthorize
         => new("userLogic.NoAuthorize", "Не верный логин или пароль");
+
+    public Error UserNameExists
+        => new("userLogic.UserNameExists", "Пользователь с таким именем уже существует");
+
+    public Error EmailExists
+        => new("userLogic.EmailExists", "Пользователь с таким email уже существует");
 }

@@ -31,7 +31,7 @@ namespace user_service.application.rest
             return Ok();
         }
 
-        [HttpPost("confirm_email")]
+        [HttpGet("confirm_email")]
         public async Task<ActionResult> ConfirmEmailAndFinishRegister(string email, string code)
         {
             var res = await _authLogic.ConfrimEmailAndRegister(
@@ -44,6 +44,8 @@ namespace user_service.application.rest
             if (res.IsFailure)
                 return BadRequest(res.Error);
             
+            HttpContext.Response.ContentType = "text/html; charset=utf-8";
+            await HttpContext.Response.SendFileAsync("application/html/index.html");
             return Ok();
         }
         

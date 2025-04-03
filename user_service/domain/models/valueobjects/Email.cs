@@ -22,7 +22,7 @@ public record Email
         if(string.IsNullOrWhiteSpace(value))
             return Result.Failure(Errors.Email.EmptyArgument);
 
-        return Regex.IsMatch(value, @"^[a-zA-Z0-9_%+-]+@[a-zA-Z0-9-]{2,}+\.[a-zA-Z]{2,}$")
+        return Regex.IsMatch(value, @"^[a-zA-Z0-9_%+-]+@[a-zA-Z0-9-]{2,}\.[a-zA-Z]{2,}$")
             ? Result.Success()
             : Result.Failure(Errors.Email.NotValid);
     }
