@@ -73,6 +73,8 @@ public class AuthLogic(
 
         var user = new User(name, password, emailAddress, role.Value!);
 
+        //TODO: добавить проверку на то, что пользователя не существует
+        
         var resAdd = await rep.Add(user);
         if (resAdd.IsFailure)
             return Result.Failure(resAdd.Error!);

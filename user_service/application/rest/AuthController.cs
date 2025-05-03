@@ -43,9 +43,7 @@ namespace user_service.application.rest
             
             if (res.IsFailure)
                 return BadRequest(res.Error);
-            
-            HttpContext.Response.ContentType = "text/html; charset=utf-8";
-            await HttpContext.Response.SendFileAsync("application/html/index.html");
+
             return Ok();
         }
         
