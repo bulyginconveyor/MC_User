@@ -29,5 +29,6 @@ public class UserConfiguration : IEntityTypeConfiguration<User>
         builder.Property(x => x.DeletedAt).HasColumnName("deleted_at");
 
         builder.HasOne(x => x.Role).WithMany();
+        builder.HasMany(x => x.RefreshTokens).WithOne().HasForeignKey(x => x.UserId).OnDelete(DeleteBehavior.Cascade);
     }
 }

@@ -23,7 +23,7 @@ builder.Services.AddNotificationServiceKafka();
 
 builder.Services.AddTransient<AuthLogic>();
 
-builder.Services.AddJwtAuth();
+builder.Services.AddJwtAuthentification();
 
 builder.Services.AddControllers();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle

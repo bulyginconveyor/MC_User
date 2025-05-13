@@ -16,12 +16,11 @@ public class AuthLogic(
     ICacheRepository<RegisterData> cacheRegisterData,
     IConfirmCodeStorage confirmCodeStorage,
     INotificationService notificationService,
-    JwtTokenHandler jwtTokenHandler)
+    JwtTokenHandler jwtTokenHandler,
+    IRefreshTokenRepository refreshTokenRepository)
 {
     public async Task<Result> GetRegisterData(RegisterData registerData)
     {
-        if (string.IsNullOrWhiteSpace(registerData.UserName))
-            return Result.Failure(Errors.UserLogic.UserNameEmpty);
         if (string.IsNullOrWhiteSpace(registerData.Email))
             return Result.Failure(Errors.UserLogic.EmailEmpty);
         if (string.IsNullOrWhiteSpace(registerData.Password))
@@ -31,12 +30,6 @@ public class AuthLogic(
         if (passwordIsValid.IsFailure)
             return Result.Failure(Errors.UserLogic.PasswordNotValid);
 
-        var resExistsUserName = await UserNameExists(registerData.UserName);
-        if (resExistsUserName.IsFailure)
-            return Result.Failure(resExistsUserName.Error!);
-        if(resExistsUserName.Value)
-            return Result.Failure(Errors.UserLogic.UserNameExists);
-        
         var resExistsEmail = await EmailExists(registerData.Email);
         if (resExistsEmail.IsFailure)
             return Result.Failure(resExistsEmail.Error!);
@@ -64,7 +57,7 @@ public class AuthLogic(
 
         var data = resGet.Value!;
 
-        var name = string.IsNullOrWhiteSpace(data.UserName) ? Name.RandomName(data.Email) : Name.Create(data.UserName);
+        var name = Name.RandomName(data.Email);
         var emailAddress = Email.Create(data.Email);
         var password = Password.Create(data.Password);
         var role = await repRole.GetOne(r => r.Name.Value == "user");
@@ -73,7 +66,7 @@ public class AuthLogic(
 
         var user = new User(name, password, emailAddress, role.Value!);
 
-        //TODO: добавить проверку на то, что пользователя не существует
+        //TODO: Добавить проверку на то, что пользователя не существует
         
         var resAdd = await rep.Add(user);
         if (resAdd.IsFailure)
@@ -85,24 +78,31 @@ public class AuthLogic(
             ? Result.Failure(resSave.Error!) 
             : Result.Success();
     }
-    public async Task<Result<Token>> Authenticate(AuthData data)
+    public async Task<Result<AuthorizeDTO>> Authenticate(AuthData data)
     {
         if (string.IsNullOrWhiteSpace(data.Login) || string.IsNullOrWhiteSpace(data.Password))
-            return Result<Token>.Failure(Errors.UserLogic.NoAuthorize);
+            return Result<AuthorizeDTO>.Failure(Errors.UserLogic.NoAuthorize);
         
         var resUser = await rep.GetOne(u => u.Email.Value == data.Login || u.UserName.Value == data.Login);
         if (resUser.IsFailure)
-            return Result<Token>.Failure(Errors.UserLogic.NoAuthorize);
+            return Result<AuthorizeDTO>.Failure(Errors.UserLogic.NoAuthorize);
 
         if(!PasswordHasher.HashIsPassword(resUser.Value!.Password.Value, data.Password))
-            return Result<Token>.Failure(Errors.UserLogic.NoAuthorize);
+            return Result<AuthorizeDTO>.Failure(Errors.UserLogic.NoAuthorize);
 
-        var token = jwtTokenHandler.GenerateJwtToken(resUser.Value.Role.Name.Value, resUser.Value.Id);
+        var token = await refreshTokenRepository.CreateNewToken(resUser.Value.Role.Name.Value, resUser.Value.Id);
         
-        return Result<Token>.Success(new Token
+        return Result<AuthorizeDTO>.Success(new AuthorizeDTO
         {
-            Value = token.Item1,
-            ExpiresSeconds = token.Item2
+            AccessToken = new Token {
+                Value = token.Value.AccessToken,
+                ExpiresSeconds = (int)token.Value.ExpiresAccessToken.Subtract(DateTime.UtcNow).TotalSeconds
+            },
+            RefreshToken = new Token
+            {
+                Value = token.Value.AccessToken,
+                ExpiresSeconds = (long)token.Value.ExpiresAccessToken.Subtract(DateTime.UtcNow).TotalSeconds
+            }
         });
     }
 

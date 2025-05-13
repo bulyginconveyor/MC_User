@@ -23,7 +23,7 @@ public class UserLogicErrors
         => new("userLogic.EmailNotConfirmed", "Email не подтвержден");
 
     public Error NoAuthorize
-        => new("userLogic.NoAuthorize", "Не верный логин или пароль");
+        => new("userLogic.NoAuthorize", "Неверный логин или пароль");
 
     public Error UserNameExists
         => new("userLogic.UserNameExists", "Пользователь с таким именем уже существует");

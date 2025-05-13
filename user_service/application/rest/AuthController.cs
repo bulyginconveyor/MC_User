@@ -16,7 +16,7 @@ namespace user_service.application.rest
         {
             var res = await _authLogic.Authenticate(authData);
             if (res.IsFailure)
-                return BadRequest(res.Error);
+                return BadRequest(res.Error!.Description);
             
             return Ok(res.Value);
         }
@@ -26,7 +26,7 @@ namespace user_service.application.rest
         {
             var res = await _authLogic.GetRegisterData(registerData);
             if (res.IsFailure)
-                return BadRequest(res.Error);
+                return BadRequest(res.Error!.Description);
             
             return Ok();
         }

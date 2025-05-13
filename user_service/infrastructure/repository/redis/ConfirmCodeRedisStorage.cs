@@ -14,7 +14,8 @@ public sealed class ConfirmCodeRedisStorage(IConnectionMultiplexer mux) : IConfi
         if(lifeTime is null)
             lifeTime = TimeSpan.FromMinutes(5);
         
-        var code = Guid.NewGuid().ToString();
+        //var code = Guid.NewGuid().ToString();
+        var code = Random.Shared.Next(10000, 99999).ToString();
         await _redis.StringSetAsync($"{PREFIX}{email}", code, lifeTime);
         
         return code;
