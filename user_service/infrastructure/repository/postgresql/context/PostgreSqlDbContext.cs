@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using user_service.domain.models;
 using user_service.domain.models.valueobjects;
 using user_service.infrastructure.repository.postgresql.extensions;
+using user_service.services.jwt_authentification;
 
 namespace user_service.infrastructure.repository.postgresql.context;
 
@@ -9,6 +10,7 @@ public class PostgreSqlDbContext : DbContext
 {
     public DbSet<User> Users { get; set; }
     public DbSet<Role> Roles { get; set; }
+    public DbSet<RefreshToken> RefreshTokens { get; set; }
     
     private readonly string _connectionString;
     

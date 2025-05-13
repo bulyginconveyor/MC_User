@@ -1,5 +1,6 @@
 using user_service.domain.models.@base;
 using user_service.domain.models.valueobjects;
+using user_service.services.jwt_authentification;
 
 namespace user_service.domain.models;
 
@@ -11,7 +12,7 @@ public class User : Entity, IDbModel
     public Email Email { get; set; }
 
     public Role Role { get; set; }
-
+    public List<RefreshToken> RefreshTokens { get; set; }
     public DateTime? ConfirmEmail { get; set; }
     
     public DateTime CreatedAt { get; set; }

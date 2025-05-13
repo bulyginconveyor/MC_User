@@ -26,6 +26,25 @@ public class JwtHelper
             return Result<Guid>.Failure(Errors.TryException);
         }
     }
+    public Result<string> UserRole(HttpContext context)
+    {
+        try
+        {
+            string headers = context.Request.Headers.Authorization!;
+            string token = headers.Split(' ')[1];
+
+            var helper = new JwtSecurityTokenHandler();
+            var jwt = helper.ReadToken(token);
+
+            var claim = (jwt as JwtSecurityToken).Claims.FirstOrDefault(c => c.Type == ClaimTypes.Role).Value;
+
+            return Result<string>.Success(claim);
+        }
+        catch (Exception ex)
+        {
+            return Result<string>.Failure(Errors.TryException);
+        }
+    }
 
     public Result<bool> UserIsAdmin(HttpContext context)
     {

@@ -9,4 +9,5 @@ public class NotificationServiceREST(HttpClient httpClient) : INotificationServi
             $"/api/email_sender?registerDataEmail={email}&code={code}", 
             null
             );
+    
 }
