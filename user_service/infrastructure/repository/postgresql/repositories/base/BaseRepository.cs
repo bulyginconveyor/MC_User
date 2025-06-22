@@ -67,6 +67,7 @@ public class BaseRepository<T>(DbContext context)
     {
         try
         {
+            entity.CreatedAt = DateTime.UtcNow;
             await _context.Set<T>().AddAsync(entity);
             //await Task.Run(() => _context.Set<T>().Attach(entity));
             return Result.Success();

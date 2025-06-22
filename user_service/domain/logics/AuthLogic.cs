@@ -1,3 +1,4 @@
+using Microsoft.EntityFrameworkCore;
 using user_service.application.dto;
 using user_service.domain.models;
 using user_service.domain.models.valueobjects;
@@ -45,15 +46,15 @@ public class AuthLogic(
 
         return Result.Success();
     }
-    public async Task<Result> ConfrimEmailAndRegister(ConfirmEmailData confrimEmailData)
+    public async Task<Result<AuthorizeDTO>> ConfrimEmailAndRegister(ConfirmEmailData confrimEmailData)
     {
         var resConfirm = await ConfirmEmail(confrimEmailData);
         if (resConfirm.IsFailure)
-            return resConfirm;
+            return Result<AuthorizeDTO>.Failure(resConfirm.Error!);
 
         var resGet = await cacheRegisterData.Get(confrimEmailData.Email);
         if (resGet.IsFailure)
-            return Result.Failure(resGet.Error!);
+            return Result<AuthorizeDTO>.Failure(resConfirm.Error!);
 
         var data = resGet.Value!;
 
@@ -62,7 +63,7 @@ public class AuthLogic(
         var password = Password.Create(data.Password);
         var role = await repRole.GetOne(r => r.Name.Value == "user");
         if (role.IsFailure)
-            return Result.Failure(role.Error!);
+            return Result<AuthorizeDTO>.Failure(resConfirm.Error!);
 
         var user = new User(name, password, emailAddress, role.Value!);
 
@@ -70,13 +71,27 @@ public class AuthLogic(
         
         var resAdd = await rep.Add(user);
         if (resAdd.IsFailure)
-            return Result.Failure(resAdd.Error!);
+            return Result<AuthorizeDTO>.Failure(resConfirm.Error!);
 
         var resSave = await rep.Save();
+
+        var token = await refreshTokenRepository.CreateNewToken(user.Role.Name.Value, user.Id);
         
-        return resSave.IsFailure 
-            ? Result.Failure(resSave.Error!) 
-            : Result.Success();
+        return resSave.IsFailure
+            ? Result<AuthorizeDTO>.Failure(resConfirm.Error!)
+            : Result<AuthorizeDTO>.Success(new AuthorizeDTO
+            {
+                AccessToken = new Token
+                {
+                    Value = token.Value!.AccessToken,
+                    ExpiresSeconds = (int)token.Value.ExpiresAccessToken.Subtract(DateTime.UtcNow).TotalSeconds
+                },
+                RefreshToken = new Token
+                {
+                    Value = token.Value.Token,
+                    ExpiresSeconds = (long)token.Value.Expires.Subtract(DateTime.UtcNow).TotalSeconds
+                }
+            });
     }
     public async Task<Result<AuthorizeDTO>> Authenticate(AuthData data)
     {
@@ -100,12 +115,33 @@ public class AuthLogic(
             },
             RefreshToken = new Token
             {
-                Value = token.Value.AccessToken,
-                ExpiresSeconds = (long)token.Value.ExpiresAccessToken.Subtract(DateTime.UtcNow).TotalSeconds
+                Value = token.Value.Token,
+                ExpiresSeconds = (long)token.Value.Expires.Subtract(DateTime.UtcNow).TotalSeconds
             }
         });
     }
 
+    public async Task<Result<AuthorizeDTO>> UpdateAccessToken(string token)
+    {
+        var res = await refreshTokenRepository.UpdateAccessToken(token);
+        if(res.IsFailure)
+            return Result<AuthorizeDTO>.Failure(res.Error!);
+
+        return Result<AuthorizeDTO>.Success(new AuthorizeDTO
+        {
+            AccessToken = new Token
+            {
+                Value = res.Value!.AccessToken,
+                ExpiresSeconds = (int)res.Value.ExpiresAccessToken.Subtract(DateTime.UtcNow).TotalSeconds
+            },
+            RefreshToken = new Token
+            {
+                Value = res.Value!.Token,
+                ExpiresSeconds = (long)res.Value.Expires.Subtract(DateTime.UtcNow).TotalSeconds
+            }
+        });
+    }
+    
     private async Task<Result> ConfirmEmail(ConfirmEmailData data)
     {
         if (string.IsNullOrWhiteSpace(data.Email) || string.IsNullOrWhiteSpace(data.Code))
@@ -126,7 +162,6 @@ public class AuthLogic(
             ? Result<bool>.Failure(resUserExists.Error!) 
             : Result<bool>.Success(resUserExists.Value);
     }
-
     private async Task<Result<bool>> EmailExists(string email)
     {
         var resUserExists = await rep.Exists(u => u.Email.Value == email);

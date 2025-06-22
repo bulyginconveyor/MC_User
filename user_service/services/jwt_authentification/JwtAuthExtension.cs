@@ -16,6 +16,7 @@ public static class JwtAuthExtension
         {
             o.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
             o.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+            o.DefaultScheme = JwtBearerDefaults.AuthenticationScheme;
         }).AddJwtBearer(o =>
         {
             o.RequireHttpsMetadata = false;
@@ -23,11 +24,12 @@ public static class JwtAuthExtension
             o.TokenValidationParameters = new TokenValidationParameters
             {
                 ValidateIssuerSigningKey = true,
-                ValidateLifetime = true,
-                ClockSkew = TimeSpan.Zero,
-                
+                ValidateIssuer = false,
+                ValidateAudience = false,
                 IssuerSigningKey = new SymmetricSecurityKey(Encoding.ASCII.GetBytes(jwtKey))
             };
         });
+
+        services.AddTransient<JwtHelper>();
     }
 }

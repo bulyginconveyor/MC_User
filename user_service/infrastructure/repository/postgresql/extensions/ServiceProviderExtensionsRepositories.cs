@@ -26,5 +26,6 @@ public static class ServiceProviderExtensionsRepositories
     {
         services.AddScoped<IDbRepository<User>, UserRepository>();
         services.AddScoped<IDbRepository<Role>, BaseRepository<Role>>();
+        services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>();
     }
 }

@@ -5,49 +5,19 @@ using Microsoft.IdentityModel.Tokens;
 
 namespace user_service.services.jwt_authentification;
 
-public class JwtTokenHandler(string keySecret)
+public class JwtTokenHandler(string keySecret, int jwtAccessTokenValidityMins = 12, int jwtRefreshTokenValidityDays = 7)
 {
-    public string jwtSecretKey = keySecret;
-    private int jwtAccessTokenValidityMins = 12;
-    private int jwtRefreshTokenValidityDays = 91;
-    
+    private string jwtSecretKey = keySecret;
+
+    public int JwtRefreshTokenValidityDays => jwtRefreshTokenValidityDays;
+
     public (string, DateTime) GenerateAccessJwtToken(string role, Guid id)
     {
-        var tokenExpiryTimeStamp = DateTime.Now.AddMinutes(jwtAccessTokenValidityMins);
+        var tokenExpiryTimeStamp = DateTime.UtcNow.AddMinutes(jwtAccessTokenValidityMins);
         var tokenKey = Encoding.ASCII.GetBytes(jwtSecretKey);
         var claimsIdentity = new ClaimsIdentity(new List<Claim>
         {
             new Claim(ClaimTypes.Role, role),
-            new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
-            new Claim("uid", id.ToString())
-        });
-
-        var signingCredentials = new SigningCredentials(
-            new SymmetricSecurityKey(tokenKey),
-            SecurityAlgorithms.HmacSha256Signature);
-
-        var securityTokenDescriptor = new SecurityTokenDescriptor
-        {
-            Subject = claimsIdentity,
-            Expires = tokenExpiryTimeStamp,
-            SigningCredentials = signingCredentials
-        };
-
-        var jwtSecurityTokenHandler = new JwtSecurityTokenHandler();
-        var securityToken = jwtSecurityTokenHandler.CreateToken(securityTokenDescriptor);
-        var token = jwtSecurityTokenHandler.WriteToken(securityToken);
-
-        return (token, tokenExpiryTimeStamp);
-    }
-    
-    public (string, DateTime) GenerateRefreshJwtToken(string role, Guid id)
-    {
-        var tokenExpiryTimeStamp = DateTime.Now.AddDays(jwtRefreshTokenValidityDays);
-        var tokenKey = Encoding.ASCII.GetBytes(jwtSecretKey);
-        var claimsIdentity = new ClaimsIdentity(new List<Claim>
-        {
-            new Claim(ClaimTypes.Role, role),
-            new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
             new Claim("uid", id.ToString())
         });
 
