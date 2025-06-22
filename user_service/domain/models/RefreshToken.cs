@@ -15,8 +15,6 @@ public class RefreshToken
     public bool IsExpired => DateTime.UtcNow >= Expires;
     [NotMapped]
     public bool IsAccessExpired => DateTime.UtcNow >= ExpiresAccessToken;
-    [NotMapped]
-    public bool IsNoAttack => ExpiresAccessToken > DateTime.UtcNow;
     public DateTime Created { get; set; }
     public DateTime? Revoked { get; set; }
     

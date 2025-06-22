@@ -17,7 +17,7 @@ public class JwtHelper
             var helper = new JwtSecurityTokenHandler();
             var jwt = helper.ReadToken(token);
 
-            var claim = (jwt as JwtSecurityToken).Claims.FirstOrDefault(c => c.Type == ClaimValueTypes.String).Value;
+            var claim = (jwt as JwtSecurityToken).Claims.FirstOrDefault(c => c.Type == "uid").Value;
 
             return Result<Guid>.Success(Guid.Parse(claim));
         }
@@ -39,6 +39,20 @@ public class JwtHelper
             var claim = (jwt as JwtSecurityToken).Claims.FirstOrDefault(c => c.Type == ClaimTypes.Role).Value;
 
             return Result<string>.Success(claim);
+        }
+        catch (Exception ex)
+        {
+            return Result<string>.Failure(Errors.TryException);
+        }
+    }
+
+    public Result<string> UserToken(HttpContext context)
+    {
+        try
+        {
+            string headers = context.Request.Headers.Authorization!;
+            string token = headers.Split(' ')[1];
+            return Result<string>.Success(token);
         }
         catch (Exception ex)
         {

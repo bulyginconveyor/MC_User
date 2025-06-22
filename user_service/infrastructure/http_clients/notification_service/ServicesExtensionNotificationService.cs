@@ -32,6 +32,7 @@ public static class ServicesExtensionNotificationService
         {
             BootstrapServers = server,
             AllowAutoCreateTopics = true,
+            EnableIdempotence = true,
             Acks = Acks.All,
         };
         

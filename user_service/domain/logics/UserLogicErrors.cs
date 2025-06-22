@@ -30,4 +30,13 @@ public class UserLogicErrors
 
     public Error EmailExists
         => new("userLogic.EmailExists", "Пользователь с таким email уже существует");
+
+    public Error IsAttack 
+        => new ("userLogic.IsAttack", "Слишком много попыток авторизации, попробуйте позже");
+
+    public Error UserNotFound
+        => new("userLogic.UserNotFound", "Такого пользователя не существует");
+
+    public Error TokenInvalid
+        => new("userLogic.TokenInvalid", "Токен не действителен");
 }
